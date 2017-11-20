@@ -6,20 +6,22 @@ if defined?(ActiveRecord::Base)
           base.class_eval do
 
             # https://github.com/attr-encrypted/attr_encrypted/issues/68
-            def reload_with_attr_encrypted(*args, &block)
+            alias_method :reload_without_attr_encrypted, :reload
+            def reload(*args, &block)
               result = reload_without_attr_encrypted(*args, &block)
               self.class.encrypted_attributes.keys.each do |attribute_name|
                 instance_variable_set("@#{attribute_name}", nil)
               end
               result
             end
-            alias_method_chain :reload, :attr_encrypted
 
             attr_encrypted_options[:encode] = true
             class << self
               alias_method :attr_encryptor, :attr_encrypted
-              alias_method_chain :method_missing, :attr_encrypted
               alias_method :undefine_attribute_methods, :reset_column_information if ::ActiveRecord::VERSION::STRING < "3"
+
+              alias_method :method_missing_without_attr_encrypted, :method_missing
+              alias_method :method_missing, :method_missing_with_attr_encrypted
             end
 
             def perform_attribute_assignment(method, new_attributes, *args)
@@ -34,13 +36,12 @@ if defined?(ActiveRecord::Base)
               def assign_attributes_with_attr_encrypted(*args)
                 perform_attribute_assignment :assign_attributes_without_attr_encrypted, *args
               end
-              alias_method_chain :assign_attributes, :attr_encrypted
             end
 
-            def attributes_with_attr_encrypted=(*args)
+            alias_method :attributes_without_attr_encrypted=, :attributes=
+            def attributes=(*args)
               perform_attribute_assignment :attributes_without_attr_encrypted=, *args
             end
-            alias_method_chain :attributes=, :attr_encrypted
           end
         end
 
