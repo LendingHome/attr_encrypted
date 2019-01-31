@@ -57,8 +57,14 @@ if defined?(ActiveRecord::Base)
 
               options = encrypted_attributes[attr.to_sym]
 
-              define_method("#{attr}_changed?") do
-                send(attr) != decrypt(attr, send("#{options[:attribute]}_was"))
+              if ::ActiveRecord::VERSION::STRING < "5.1.6.1"
+                define_method("#{attr}_changed?") do
+                  send(attr) != decrypt(attr, send("#{options[:attribute]}_was"))
+                end
+              else
+                define_method("saved_change_to_#{attr}?") do
+                  send(attr) != decrypt(attr, send("#{options[:attribute]}_in_database"))
+                end
               end
             end
           end
