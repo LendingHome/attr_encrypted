@@ -62,7 +62,7 @@ if defined?(ActiveRecord::Base)
                   send(attr) != decrypt(attr, send("#{options[:attribute]}_was"))
                 end
               else
-                define_method("saved_change_to_#{attr}?") do
+                define_method("will_save_change_to_#{attr}?") do
                   send(attr) != decrypt(attr, send("#{options[:attribute]}_in_database"))
                 end
               end
